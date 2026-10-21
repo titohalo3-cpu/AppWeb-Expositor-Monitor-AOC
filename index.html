@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expositor Monitor AOC · 24G42E</title>
 <meta name="description" content="AOC 24G42E: monitor gaming de 23,8 pulgadas, Fast IPS Full HD a 180 Hz con Adaptive Sync y HDR10.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>
+  // tema guardado o, por defecto, oscuro; antes de pintar para que no parpadee
+  try { document.documentElement.dataset.theme = localStorage.getItem('expositor-tema') === 'light' ? 'light' : 'dark'; }
+  catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
@@ -19,7 +26,27 @@
     --muted: rgba(255, 255, 255, .74);
     --glass: rgba(255, 255, 255, .08);
     --glass-border: rgba(255, 255, 255, .2);
+    --scan: rgba(255, 255, 255, .028);
+    --dlg-bg: rgba(12, 4, 10, .78);
+    --card-active: rgba(255, 255, 255, .14);
     --display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
+    color-scheme: dark;
+  }
+  /* modo claro: el fondo y el acento los pone el JS según el modo (Competitivo o Color) */
+  :root[data-theme="light"] {
+    --bg-inner: #f8b9c3;
+    --bg-mid: #fbe1e5;
+    --bg-outer: #f7f2f3;
+    --accent: #c8102e;
+    --accent-ink: #ffffff;
+    --text: #1c0e14;
+    --muted: rgba(28, 14, 20, .72);
+    --glass: rgba(255, 255, 255, .6);
+    --glass-border: rgba(28, 14, 20, .14);
+    --scan: rgba(0, 0, 0, .035);
+    --dlg-bg: rgba(255, 255, 255, .92);
+    --card-active: rgba(255, 255, 255, .85);
+    color-scheme: light;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,7 +77,7 @@
   /* líneas de barrido muy sutiles, guiño a un panel */
   .bg::after {
     content: ""; position: absolute; inset: 0;
-    background: repeating-linear-gradient(to bottom, rgba(255,255,255,.028) 0 1px, transparent 1px 4px);
+    background: repeating-linear-gradient(to bottom, var(--scan) 0 1px, transparent 1px 4px);
     mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%);
     -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%);
   }
@@ -111,6 +138,18 @@
   }
   .pill-link:hover { background: var(--accent); color: var(--accent-ink); }
 
+  .head-actions { display: flex; align-items: center; gap: 10px; }
+  .scheme-btn {
+    display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    cursor: pointer;
+    transition: background-color .3s, color .3s;
+  }
+  .scheme-btn:hover { background: var(--accent); color: var(--accent-ink); }
+  .scheme-btn svg { width: 20px; height: 20px; }
+  /* se muestra el icono del modo al que se cambia */
+  :root[data-theme="dark"] .i-moon, :root[data-theme="light"] .i-sun { display: none; }
+
   /* ---------- Monitor fijo en el centro ---------- */
   .stage {
     position: fixed; inset: 0; z-index: 2;
@@ -143,8 +182,9 @@
     position: absolute; left: 0; bottom: calc(var(--rise, 26px) + 6px); transform: translateX(-50%);
     padding: 7px 14px; border-radius: 999px;
     font-family: Manrope, sans-serif; font-weight: 700; font-size: .82rem; white-space: nowrap;
+    color: #fff;
     background: rgba(10, 4, 12, .72);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(255, 255, 255, .2);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -245,7 +285,7 @@
     cursor: pointer;
     transition: border-color .4s, background-color .4s;
   }
-  .card.active { border-color: var(--accent); background: rgba(255, 255, 255, .14); }
+  .card.active { border-color: var(--accent); background: var(--card-active); }
   .card-img {
     width: 118px; margin-top: -50px;
     transition: transform .6s cubic-bezier(.34, 1.56, .64, 1);
@@ -310,7 +350,7 @@
     padding: 34px 36px 28px;
     border-radius: 28px;
     color: var(--text);
-    background: rgba(12, 4, 10, .78);
+    background: var(--dlg-bg);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -363,6 +403,8 @@
     header { padding: 14px 16px; }
     .logo b { font-size: 1.8rem; }
     header .pill-link { padding: 10px 16px; font-size: .84rem; }
+    .head-actions { gap: 8px; }
+    .scheme-btn { width: 40px; height: 40px; }
     .hero { padding: 92px 16px 48px; }
     .gap { height: max(200px, calc(100svh - 2 * (92px + 1.6 * clamp(5rem, 10vw, 12rem)))); }
     .desc { font-size: 1rem; }
@@ -401,7 +443,13 @@
     <button type="button" data-nav="modes">Modos</button>
     <button type="button" data-nav="specs">Especificaciones</button>
   </nav>
-  <a class="pill-link glass" href="https://aoc.com/es/gaming/monitors/24g42e" target="_blank" rel="noopener">Ficha en AOC <span aria-hidden="true">↗</span></a>
+  <div class="head-actions">
+    <button class="scheme-btn glass" id="schemeBtn" type="button" aria-label="Cambiar a modo claro">
+      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>
+    </button>
+    <a class="pill-link glass" href="https://aoc.com/es/gaming/monitors/24g42e" target="_blank" rel="noopener">Ficha en AOC <span aria-hidden="true">↗</span></a>
+  </div>
 </header>
 
 <main id="top">
@@ -634,18 +682,18 @@
 
   const THEMES = [
     {
-      name: 'Competitivo', screen: 'competitive',
-      bg: ['#8a0b1f', '#480412', '#120103'],
-      accent: '#ffc2cb', ink: '#3b0512', rim: '#ff2a44',
+      name: 'Competitivo', screen: 'competitive', rim: '#ff2a44',
+      dark: { bg: ['#8a0b1f', '#480412', '#120103'], accent: '#ffc2cb', ink: '#3b0512' },
+      light: { bg: ['#f8b9c3', '#fbe1e5', '#f7f2f3'], accent: '#c8102e', ink: '#ffffff' },
       text: {
         h1a: '180', h1b: 'Hz', h2a: 'Fast', h2b: 'IPS',
         desc: 'Panel Fast IPS de 23,8″ a Full HD con 1 ms GtG y 0,5 ms MPRT. Cada movimiento llega nítido, fotograma a fotograma.'
       }
     },
     {
-      name: 'Color', screen: 'color',
-      bg: ['#3d1fa3', '#1a0a57', '#060218'],
-      accent: '#b9f3ff', ink: '#06213a', rim: '#7c5cff',
+      name: 'Color', screen: 'color', rim: '#7c5cff',
+      dark: { bg: ['#3d1fa3', '#1a0a57', '#060218'], accent: '#b9f3ff', ink: '#06213a' },
+      light: { bg: ['#cdbdfb', '#e6defd', '#f3f1f8'], accent: '#5a2ad0', ink: '#ffffff' },
       text: {
         h1a: 'Más', h1b: 'color', h2a: 'HDR', h2b: '10',
         desc: 'Cubre el 129,3 % del espacio sRGB y el 93,9 % de DCI-P3, y es compatible con HDR10. Más matices en cada escena.'
@@ -654,6 +702,14 @@
   ];
   let current = 0;
   let busy = false;
+  let scheme = root.dataset.theme === 'light' ? 'light' : 'dark';
+
+  // variables CSS del fondo y el acento para el modo y el tema de color actuales
+  const paletteVars = () => {
+    const p = THEMES[current][scheme];
+    return { '--bg-inner': p.bg[0], '--bg-mid': p.bg[1], '--bg-outer': p.bg[2], '--accent': p.accent, '--accent-ink': p.ink };
+  };
+  gsap.set(root, paletteVars());
 
   /* ---------- Estados del despiece (uno por capítulo) ---------- */
   const CLOSED = {
@@ -775,10 +831,12 @@
     // 4 · WLED: luz cálida que sube desde una tira de LED en el borde inferior
     (t, a) => {
       const pulse = 0.85 + 0.15 * Math.sin(t * 1.3);
+      // en modo claro la luz blanca no se vería: se usa un ámbar cálido
+      const warm = scheme === 'light' ? '232,140,40' : '255,243,214';
       const g = bx.createLinearGradient(0, bgH, 0, bgH * 0.35);
-      g.addColorStop(0, `rgba(255,243,214,${0.13 * a * pulse})`); g.addColorStop(1, 'rgba(255,243,214,0)');
+      g.addColorStop(0, `rgba(${warm},${0.13 * a * pulse})`); g.addColorStop(1, `rgba(${warm},0)`);
       bx.fillStyle = g; bx.fillRect(0, bgH * 0.35, bgW, bgH * 0.65);
-      bx.fillStyle = `rgba(255,248,230,${0.5 * a})`;
+      bx.fillStyle = `rgba(${warm},${0.5 * a})`;
       for (let x = 12; x < bgW; x += 28) bx.fillRect(x, bgH - 4, 10, 2);
     },
     // 5 · Adaptive Sync: dos ondas (GPU y monitor) que se desfasan y vuelven a sincronizarse
@@ -1518,11 +1576,7 @@
       }
     });
 
-    tl.to(root, {
-      '--bg-inner': theme.bg[0], '--bg-mid': theme.bg[1], '--bg-outer': theme.bg[2],
-      '--accent': theme.accent, '--accent-ink': theme.ink,
-      duration: 1.5, ease: 'power2.inOut'
-    }, 0);
+    tl.to(root, { ...paletteVars(), duration: 1.5, ease: 'power2.inOut' }, 0);
 
     if (three) {
       const c = new THREE.Color(theme.rim);
@@ -1554,6 +1608,20 @@
   }
 
   cards.forEach((card, i) => card.addEventListener('click', () => switchTheme(i)));
+
+  /* ---------- Modo claro / oscuro ---------- */
+  const schemeBtn = document.getElementById('schemeBtn');
+  const paintSchemeBtn = () => schemeBtn.setAttribute('aria-label', scheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  paintSchemeBtn();
+  schemeBtn.addEventListener('click', () => {
+    if (busy) return;
+    scheme = scheme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = scheme;
+    try { localStorage.setItem('expositor-tema', scheme); } catch (e) {}
+    gsap.to(root, { ...paletteVars(), duration: reduced ? 0 : 0.6, ease: 'power2.inOut' });
+    paintSchemeBtn();
+    status.textContent = scheme === 'dark' ? 'Modo oscuro activado' : 'Modo claro activado';
+  });
 
   /* ---------- Navegación y ficha técnica ---------- */
   const dialog = document.getElementById('specs');
