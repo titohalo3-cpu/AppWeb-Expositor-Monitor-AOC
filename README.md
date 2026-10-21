@@ -2,7 +2,7 @@
 
 Landing de una sola página para el monitor gaming AOC 24G42E (23,8″, Fast IPS, Full HD, 180 Hz). El monitor está modelado en 3D por código, se puede girar 360° arrastrándolo y, al hacer scroll, se abre por capas para enseñar cada especificación: panel, filtro de color, retroiluminación, placa, conexiones, inclinación y anclaje VESA.
 
-**Demo:** https://titohalo3-cpu.github.io/AppWeb-AOC-24G42E/
+**Demo:** https://titohalo3-cpu.github.io/AppWeb-Expositor-Monitor-AOC/
 
 ## Qué incluye
 
