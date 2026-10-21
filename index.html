@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AOC 24G42E · 180 Hz Fast IPS</title>
+<title>Expositor Monitor AOC · 24G42E</title>
 <meta name="description" content="AOC 24G42E: monitor gaming de 23,8 pulgadas, Fast IPS Full HD a 180 Hz con Adaptive Sync y HDR10.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,6 +118,10 @@
     animation: appear 1.5s ease .3s both;
   }
   .stage canvas { width: 100%; height: 100%; display: block; }
+  /* el lienzo recibe el arrastre; en móvil el deslizamiento vertical sigue haciendo scroll */
+  #monitor { pointer-events: auto; touch-action: pan-y; }
+  #monitor.grab { cursor: grab; }
+  #monitor.grabbing { cursor: grabbing; }
   .stage .fallback { width: 100%; height: 100%; display: grid; place-items: center; }
   .stage .fallback svg { width: min(46vw, 640px); height: auto; }
   @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
@@ -158,7 +162,18 @@
   .col { position: relative; z-index: 4; display: flex; flex-direction: column; min-height: 0; }
   .col-left { align-items: flex-start; }
   .left-body { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
-  .gap { pointer-events: none; }
+  .gap { position: relative; pointer-events: none; }
+  .drag-hint {
+    position: absolute; left: 50%; bottom: 0; z-index: 4;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px;
+    font-family: Manrope, sans-serif; font-weight: 700; font-size: .82rem; white-space: nowrap;
+    color: var(--muted);
+    transition: opacity .6s;
+  }
+  .drag-hint svg { width: 18px; height: 18px; color: var(--accent); }
+  .drag-hint.used { opacity: 0; }
 
   .big {
     font-family: var(--display); font-weight: 900;
@@ -408,7 +423,14 @@
       </div>
     </div>
 
-    <div class="gap"></div>
+    <div class="gap">
+      <p class="drag-hint glass" id="dragHint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18.5 2v4h-4M5.5 22v-4h4"/>
+        </svg>
+        Arrastra el monitor para girarlo 360°
+      </p>
+    </div>
 
     <div class="col col-right">
       <p class="modes-label" id="modes-label">Elige tu modo</p>
@@ -688,12 +710,14 @@
     }
   }
   const acc = a => `rgba(${accentRGB[0]},${accentRGB[1]},${accentRGB[2]},${a})`;
-  function activeMotif() {
+  // 0 = portada, 1–9 = capítulos
+  function activeChapter() {
     const mid = scrollY + innerHeight * 0.5;
     let k = 0;
     chapterTops.forEach((top, i) => { if (mid >= top) k = i + 1; });
-    return CHAPTER_MOTIF[k];
+    return k;
   }
+  const activeMotif = () => CHAPTER_MOTIF[activeChapter()];
 
   const SPEED_LINES = Array.from({ length: 34 }, () => ({
     y: Math.random(), len: 80 + Math.random() * 260, v: 0.25 + Math.random() * 0.6, o: Math.random()
@@ -1328,6 +1352,61 @@
     }
   }
 
+  /* ---------- Giro libre de 360° arrastrando el monitor ---------- */
+  const drag = { active: false, id: null, lastX: 0, rot: 0, vel: 0, chapter: 0 };
+  const hint = document.getElementById('dragHint');
+  if (!three) hint.remove();
+  if (three) {
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const hitsMonitor = e => {
+      ndc.set(e.clientX / innerWidth * 2 - 1, 1 - e.clientY / innerHeight * 2);
+      ray.setFromCamera(ndc, three.camera);
+      return ray.intersectObject(three.pivot, true).length > 0;
+    };
+    canvas.addEventListener('pointerdown', e => {
+      if (!hitsMonitor(e)) return;
+      gsap.killTweensOf(drag);
+      Object.assign(drag, { active: true, id: e.pointerId, lastX: e.clientX, vel: 0 });
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('grabbing');
+      hint.classList.add('used');
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (drag.active && e.pointerId === drag.id) {
+        drag.vel = (e.clientX - drag.lastX) * 0.01;
+        drag.rot += drag.vel;
+        drag.lastX = e.clientX;
+      } else if (e.pointerType === 'mouse') {
+        canvas.classList.toggle('grab', hitsMonitor(e));
+      }
+    });
+    const release = e => {
+      if (e.pointerId !== drag.id) return;
+      drag.active = false;
+      canvas.classList.remove('grabbing');
+    };
+    canvas.addEventListener('pointerup', release);
+    canvas.addEventListener('pointercancel', release);
+  }
+
+  function updateDrag() {
+    // al cambiar de capítulo, el giro manual vuelve a la vuelta completa más cercana
+    const ch = activeChapter();
+    if (ch !== drag.chapter) {
+      drag.chapter = ch;
+      if (!drag.active) {
+        drag.vel = 0;
+        gsap.to(drag, { rot: Math.round(drag.rot / (Math.PI * 2)) * Math.PI * 2, duration: 1.2, ease: 'power2.out' });
+      }
+    }
+    // inercia al soltar
+    if (!drag.active && Math.abs(drag.vel) > 0.0005) {
+      drag.rot += reduced ? 0 : drag.vel;
+      drag.vel *= reduced ? 0 : 0.94;
+    }
+  }
+
   /* ---------- Bucle principal ---------- */
   let rotX = 0, rotY = 0, frame = 0, lastBlur = -1, screenTime = 0, lastNow = 0;
   function tick(now) {
@@ -1338,10 +1417,14 @@
     drawBg(t);
     if (!three) return;
 
-    const amp = (reduced ? 0.25 : 1) * S.follow;
-    rotY += (pointer.nx * 40 * DEG * amp - rotY) * 0.05;
-    rotX += (pointer.ny * 15 * DEG * amp - rotX) * 0.05;
-    three.pivot.rotation.set(rotX + S.rx, rotY + S.ry + spin.v, 0);
+    // mientras se arrastra, el seguimiento del cursor se queda quieto
+    if (!drag.active) {
+      const amp = (reduced ? 0.25 : 1) * S.follow;
+      rotY += (pointer.nx * 40 * DEG * amp - rotY) * 0.05;
+      rotX += (pointer.ny * 15 * DEG * amp - rotX) * 0.05;
+    }
+    updateDrag();
+    three.pivot.rotation.set(rotX + S.rx, rotY + S.ry + spin.v + drag.rot, 0);
     three.sheenTex.offset.x = -rotY * 0.6;
     three.apply(t);
 
