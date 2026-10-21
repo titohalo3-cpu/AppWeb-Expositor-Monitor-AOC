@@ -1,0 +1,1502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AOC 24G42E · 180 Hz Fast IPS</title>
+<meta name="description" content="AOC 24G42E: monitor gaming de 23,8 pulgadas, Fast IPS Full HD a 180 Hz con Adaptive Sync y HDR10.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-inner: #8a0b1f;
+    --bg-mid: #480412;
+    --bg-outer: #120103;
+    --accent: #ffc2cb;
+    --accent-ink: #3b0512;
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, .74);
+    --glass: rgba(255, 255, 255, .08);
+    --glass-border: rgba(255, 255, 255, .2);
+    --display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    overflow-x: hidden;
+    background: var(--bg-outer);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button { font: inherit; color: inherit; }
+  a { color: inherit; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  /* ---------- Fondo ---------- */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(circle at 50% 50%, var(--bg-inner) 0%, var(--bg-mid) 42%, var(--bg-outer) 100%);
+  }
+  /* líneas de barrido muy sutiles, guiño a un panel */
+  .bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,.028) 0 1px, transparent 1px 4px);
+    mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%);
+  }
+
+  /* ---------- Fondo animado según la especificación de cada capítulo ---------- */
+  .bgfx {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ---------- Cabecera ---------- */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 24px 48px;
+  }
+  .logo {
+    display: flex; align-items: baseline; gap: 10px;
+    text-decoration: none;
+  }
+  .logo b {
+    font-family: var(--display); font-weight: 900;
+    font-size: 2.1rem; letter-spacing: .06em; line-height: 1;
+  }
+  .logo span {
+    font-family: Manrope, sans-serif; font-weight: 700;
+    font-size: .72rem; letter-spacing: .22em;
+    color: var(--accent);
+  }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .nav {
+    display: flex; gap: 4px; padding: 6px;
+    border-radius: 999px;
+  }
+  .nav button {
+    font-family: Manrope, sans-serif; font-weight: 700; font-size: .9rem;
+    background: none; border: 0; cursor: pointer;
+    padding: 10px 22px; border-radius: 999px;
+    transition: background-color .3s, color .3s;
+  }
+  .nav button:hover,
+  .nav button[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .pill-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: Manrope, sans-serif; font-weight: 700; font-size: .9rem;
+    text-decoration: none; cursor: pointer;
+    padding: 12px 22px; border-radius: 999px;
+    transition: background-color .3s, color .3s;
+  }
+  .pill-link:hover { background: var(--accent); color: var(--accent-ink); }
+
+  /* ---------- Monitor fijo en el centro ---------- */
+  .stage {
+    position: fixed; inset: 0; z-index: 2;
+    pointer-events: none;
+    animation: appear 1.5s ease .3s both;
+  }
+  .stage canvas { width: 100%; height: 100%; display: block; }
+  .stage .fallback { width: 100%; height: 100%; display: grid; place-items: center; }
+  .stage .fallback svg { width: min(46vw, 640px); height: auto; }
+  @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+
+  /* etiquetas de las piezas, ancladas al modelo 3D */
+  .tags { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+  .tag { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform, opacity; }
+  .tag::before {
+    content: ""; position: absolute; left: -6px; top: -6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, .16), 0 0 18px var(--accent);
+  }
+  .tag::after {
+    content: ""; position: absolute; left: -1px; bottom: 6px;
+    width: 2px; height: var(--rise, 26px); background: linear-gradient(to top, var(--accent), transparent);
+  }
+  .tag span {
+    position: absolute; left: 0; bottom: calc(var(--rise, 26px) + 6px); transform: translateX(-50%);
+    padding: 7px 14px; border-radius: 999px;
+    font-family: Manrope, sans-serif; font-weight: 700; font-size: .82rem; white-space: nowrap;
+    background: rgba(10, 4, 12, .72);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    height: 100vh; height: 100svh; min-height: 620px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr);
+    gap: 24px;
+    padding: 118px 48px 44px;
+  }
+
+  .col { position: relative; z-index: 4; display: flex; flex-direction: column; min-height: 0; }
+  .col-left { align-items: flex-start; }
+  .left-body { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
+  .gap { pointer-events: none; }
+
+  .big {
+    font-family: var(--display); font-weight: 900;
+    font-size: clamp(5rem, 10vw, 12rem);
+    line-height: .8;
+    text-transform: uppercase;
+    letter-spacing: -.005em;
+  }
+  .big > span { display: block; }
+  .big .accent, .accent { color: var(--accent); }
+
+  .desc {
+    max-width: 31ch;
+    margin-top: 30px;
+    font-size: 1.05rem; line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 16px;
+    margin-top: 32px;
+    padding: 7px 7px 7px 26px;
+    border-radius: 999px;
+    font-weight: 600; font-size: 1rem;
+    cursor: pointer;
+  }
+  .cta .plus {
+    display: grid; place-items: center;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink);
+    font-size: 1.6rem; font-weight: 500; line-height: 1;
+    transition: transform .4s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .cta:hover .plus { transform: rotate(90deg); }
+
+  .badge {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: auto;
+    padding: 10px 22px 10px 10px;
+    border-radius: 999px;
+  }
+  .badge-icon {
+    display: grid; place-items: center;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+  }
+  .badge-icon svg { width: 28px; height: 28px; }
+  .badge strong { display: block; font-family: Manrope, sans-serif; font-size: .95rem; }
+  .badge small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
+
+  /* ---------- Columna derecha y tarjetas ---------- */
+  .col-right { align-items: flex-end; }
+  .modes-label {
+    font-family: Manrope, sans-serif; font-weight: 700;
+    font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .modes { display: flex; gap: 16px; margin-top: 64px; }
+  .modes.busy .card { cursor: progress; }
+
+  .card {
+    width: 135px;
+    border-radius: 28px;
+    padding: 0 14px 18px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .4s, background-color .4s;
+  }
+  .card.active { border-color: var(--accent); background: rgba(255, 255, 255, .14); }
+  .card-img {
+    width: 118px; margin-top: -50px;
+    transition: transform .6s cubic-bezier(.34, 1.56, .64, 1);
+    filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .45));
+  }
+  .card-img svg { width: 100%; height: auto; display: block; }
+  .card:hover .card-img,
+  .card:focus-visible .card-img { transform: translateY(-30px) rotate(-12deg) scale(1.15); }
+  .card strong { margin-top: 10px; font-family: Manrope, sans-serif; font-size: .98rem; }
+  .card small { margin-top: 4px; font-size: .74rem; color: var(--muted); line-height: 1.35; }
+
+  .col-right .big { margin-top: auto; text-align: right; }
+
+  /* ---------- Recorrido por el interior ---------- */
+  .story { position: relative; z-index: 4; }
+  .chapter {
+    min-height: 100vh; min-height: 100svh;
+    display: flex; align-items: center;
+    padding: 110px 48px 60px;
+  }
+  .chapter.right { justify-content: flex-end; }
+  .chapter.final { justify-content: center; align-items: flex-end; text-align: center; }
+
+  .story-card {
+    width: min(390px, 100%);
+    padding: 30px 30px 28px;
+    border-radius: 28px;
+    opacity: 0; transform: translateY(40px);
+    transition: opacity .8s ease, transform .8s cubic-bezier(.22, 1, .36, 1);
+  }
+  .story-card.in { opacity: 1; transform: none; }
+  .eyebrow {
+    font-family: Manrope, sans-serif; font-weight: 700;
+    font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .story-card h2 {
+    margin-top: 12px;
+    font-family: var(--display); font-weight: 900;
+    font-size: clamp(3.4rem, 5.6vw, 6rem); line-height: .82;
+    text-transform: uppercase;
+  }
+  .story-card .desc { margin-top: 18px; max-width: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; list-style: none; }
+  .chips li {
+    padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    font-family: Manrope, sans-serif; font-weight: 700; font-size: .8rem;
+  }
+  .final .story-card { width: min(560px, 100%); }
+  .final .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 24px; }
+  .final .actions .cta { margin-top: 0; }
+  .note { margin-top: 20px; font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- Ficha técnica ---------- */
+  dialog {
+    margin: auto;
+    width: calc(100% - 32px); max-width: 760px; max-height: 86vh;
+    overflow: auto;
+    padding: 34px 36px 28px;
+    border-radius: 28px;
+    color: var(--text);
+    background: rgba(12, 4, 10, .78);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  dialog::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: blur(4px); }
+  .dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .dlg-head h2 { font-family: var(--display); font-weight: 900; font-size: 3.2rem; line-height: .9; text-transform: uppercase; }
+  .dlg-head p { margin-top: 8px; color: var(--muted); font-size: .92rem; }
+  .dlg-close {
+    flex: none; width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink); border: 0;
+    font-size: 1.5rem; line-height: 1; cursor: pointer;
+  }
+  dialog h3 {
+    margin-top: 28px;
+    font-family: Manrope, sans-serif; font-size: .74rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  dialog dl { display: grid; grid-template-columns: minmax(150px, 34%) 1fr; margin-top: 10px; }
+  dialog dt, dialog dd { padding: 11px 0; border-top: 1px solid rgba(255, 255, 255, .12); font-size: .95rem; }
+  dialog dt { color: var(--muted); padding-right: 16px; }
+  .src { margin-top: 26px; font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1199px) {
+    header { padding: 18px 24px; }
+    .hero {
+      display: flex; flex-direction: column;
+      height: auto; min-height: 0;
+      padding: 104px 24px 56px;
+    }
+    /* el título queda arriba y el hueco central deja ver el monitor fijo */
+    .col-left { display: contents; }
+    .col-left h1 { position: relative; z-index: 4; }
+    .gap { display: block; height: max(220px, calc(100svh - 2 * (104px + 1.6 * clamp(5rem, 10vw, 12rem)))); }
+    .left-body { position: relative; z-index: 4; order: 3; }
+    .col-right { order: 4; align-items: stretch; }
+    .badge { margin-top: 32px; }
+    .modes { justify-content: center; margin-top: 70px; }
+    .modes-label { margin-top: 48px; text-align: center; }
+    .col-right .big { margin-top: 44px; }
+    .chapter, .chapter.right { justify-content: center; align-items: flex-end; padding: 90px 24px 32px; }
+    .story-card { width: min(520px, 100%); }
+  }
+
+  @media (max-width: 760px) {
+    .nav { display: none; }
+    header { padding: 14px 16px; }
+    .logo b { font-size: 1.8rem; }
+    header .pill-link { padding: 10px 16px; font-size: .84rem; }
+    .hero { padding: 92px 16px 48px; }
+    .gap { height: max(200px, calc(100svh - 2 * (92px + 1.6 * clamp(5rem, 10vw, 12rem)))); }
+    .desc { font-size: 1rem; }
+    .chapter, .chapter.right { padding: 80px 16px 24px; }
+    .story-card { padding: 22px 20px 20px; }
+    .story-card h2 { font-size: 3rem; }
+    .tag span { font-size: .72rem; padding: 6px 11px; }
+    dialog { padding: 26px 20px 22px; }
+    .dlg-head h2 { font-size: 2.5rem; }
+    dialog dl { grid-template-columns: 1fr; }
+    dialog dt { padding-bottom: 0; }
+    dialog dd { border-top: 0; padding-top: 3px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage { animation: appear .8s ease both; }
+    .story-card { transform: none; transition: opacity .4s ease; }
+    .card-img, .cta .plus { transition-duration: .2s; }
+    .card:hover .card-img,
+    .card:focus-visible .card-img { transform: translateY(-6px); }
+    .cta:hover .plus { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true"></div>
+<canvas class="bgfx" aria-hidden="true"></canvas>
+<div class="stage" aria-hidden="true"><canvas id="monitor"></canvas></div>
+<div class="tags" aria-hidden="true"></div>
+
+<header>
+  <a class="logo" href="#top" aria-label="AOC 24G42E, inicio"><b>AOC</b><span>24G42E</span></a>
+  <nav class="nav glass" aria-label="Principal">
+    <button type="button" data-nav="home" aria-current="true">Inicio</button>
+    <button type="button" data-nav="modes">Modos</button>
+    <button type="button" data-nav="specs">Especificaciones</button>
+  </nav>
+  <a class="pill-link glass" href="https://aoc.com/es/gaming/monitors/24g42e" target="_blank" rel="noopener">Ficha en AOC <span aria-hidden="true">↗</span></a>
+</header>
+
+<main id="top">
+  <section class="hero" aria-labelledby="headline">
+    <div class="col col-left">
+      <h1 class="big" id="headline">
+        <span data-swap="h1a">180</span>
+        <span class="accent" data-swap="h1b">Hz</span>
+      </h1>
+      <div class="left-body">
+        <p class="desc" data-swap="desc">Panel Fast IPS de 23,8″ a Full HD con 1 ms GtG y 0,5 ms MPRT. Cada movimiento llega nítido, fotograma a fotograma.</p>
+        <button class="cta glass" type="button" data-go-specs>
+          Ver especificaciones <span class="plus" aria-hidden="true">+</span>
+        </button>
+        <div class="badge glass">
+          <span class="badge-icon" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M3 14c2.5-6 5-6 7.5 0s5 6 7.5 0 5-6 7 0"/>
+              <path d="M3 21h22" opacity=".45"/><path d="M3 7h22" opacity=".45"/>
+            </svg>
+          </span>
+          <span><strong>G-SYNC Compatible</strong><small>Adaptive Sync de 48 a 180 Hz</small></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap"></div>
+
+    <div class="col col-right">
+      <p class="modes-label" id="modes-label">Elige tu modo</p>
+      <div class="modes" role="group" aria-labelledby="modes-label">
+        <button class="card glass active" type="button" data-theme="0" aria-pressed="true">
+          <span class="card-img" aria-hidden="true">
+            <svg viewBox="0 0 120 96">
+              <defs>
+                <linearGradient id="t1-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0108"/><stop offset="1" stop-color="#5a0a20"/></linearGradient>
+                <linearGradient id="t1-sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd36b"/><stop offset="1" stop-color="#ff2a55"/></linearGradient>
+              </defs>
+              <rect x="3" y="3" width="114" height="68" rx="3" fill="#121214"/>
+              <rect x="4.5" y="4.5" width="111" height="62" fill="url(#t1-sky)"/>
+              <path d="M47 39a13 13 0 0 1 26 0z" fill="url(#t1-sun)"/>
+              <rect x="4.5" y="39" width="111" height="27.5" fill="#12000a"/>
+              <g stroke="#ff3c64" stroke-width=".9">
+                <path d="M60 39V66.5M52 39 30 66.5M68 39l22 27.5M44 39 4.5 60M76 39l39.5 21M4.5 44h111M4.5 51h111M4.5 62h111"/>
+              </g>
+              <g stroke="#5dffb0" stroke-width="1.4"><path d="M60 22v4M60 31v4M53 28.5h4M63 28.5h4"/></g>
+              <path d="M54 71h12l3 16H51z" fill="#1c1c20"/>
+              <rect x="32" y="86" width="56" height="6" rx="3" fill="#1c1c20"/>
+              <rect x="46" y="87.5" width="28" height="1.4" rx=".7" fill="#ff2a44"/>
+            </svg>
+          </span>
+          <strong>Competitivo</strong>
+          <small>180 Hz · 0,5 ms MPRT</small>
+        </button>
+        <button class="card glass" type="button" data-theme="1" aria-pressed="false">
+          <span class="card-img" aria-hidden="true">
+            <svg viewBox="0 0 120 96">
+              <defs>
+                <linearGradient id="t2-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b0b63"/><stop offset=".45" stop-color="#6a2bd9"/><stop offset=".8" stop-color="#ff5fa2"/><stop offset="1" stop-color="#ffb36b"/></linearGradient>
+                <linearGradient id="t2-sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7aa8"/><stop offset="1" stop-color="#1b1060"/></linearGradient>
+              </defs>
+              <rect x="3" y="3" width="114" height="68" rx="3" fill="#121214"/>
+              <rect x="4.5" y="4.5" width="111" height="40" fill="url(#t2-sky)"/>
+              <circle cx="84" cy="30" r="6" fill="#fff3c4"/>
+              <path d="M4.5 44.5 20 30l12 9 14-16 18 21.5z" fill="#7b3fd6"/>
+              <path d="M40 44.5 62 27l16 12 12-8 25.5 13.5z" fill="#4b23a8"/>
+              <rect x="4.5" y="44.5" width="111" height="22" fill="url(#t2-sea)"/>
+              <path d="M4.5 66.5V52c14-6 28-4 40 6l6 8.5z" fill="#0f8f8a"/>
+              <g stroke="#fff3c4" stroke-width="1" opacity=".8"><path d="M78 49h12M80 53h8M81 57h6"/></g>
+              <path d="M54 71h12l3 16H51z" fill="#1c1c20"/>
+              <rect x="32" y="86" width="56" height="6" rx="3" fill="#1c1c20"/>
+              <rect x="46" y="87.5" width="28" height="1.4" rx=".7" fill="#7c5cff"/>
+            </svg>
+          </span>
+          <strong>Color</strong>
+          <small>HDR10 · 129,3 % sRGB</small>
+        </button>
+      </div>
+      <p class="big" aria-hidden="true">
+        <span data-swap="h2a">Fast</span>
+        <span class="accent" data-swap="h2b">IPS</span>
+      </p>
+    </div>
+  </section>
+
+  <div class="story" id="story">
+    <section class="chapter" aria-labelledby="ch1">
+      <div class="story-card glass">
+        <p class="eyebrow">01 · Panel</p>
+        <h2 id="ch1">Fast <span class="accent">IPS</span></h2>
+        <p class="desc">Al abrirlo, tras el marco frontal aparece el panel: 23,8 pulgadas (60,5 cm) de tecnología Fast IPS con resolución Full HD de 1920 × 1080 en formato 16:9.</p>
+        <ul class="chips"><li>23,8″ · 60,5 cm</li><li>1920 × 1080</li><li>16:9</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter right" aria-labelledby="ch2">
+      <div class="story-card glass">
+        <p class="eyebrow">02 · Velocidad</p>
+        <h2 id="ch2">180 <span class="accent">Hz</span></h2>
+        <p class="desc">El panel se refresca hasta 180 veces por segundo y responde en 1 ms GtG y 0,5 ms MPRT, para que el movimiento rápido se vea definido.</p>
+        <ul class="chips"><li>180 Hz</li><li>1 ms GtG</li><li>0,5 ms MPRT</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter" aria-labelledby="ch3">
+      <div class="story-card glass">
+        <p class="eyebrow">03 · Color</p>
+        <h2 id="ch3">129,3 % <span class="accent">sRGB</span></h2>
+        <p class="desc">La capa de filtro de color reparte la luz en subpíxeles rojos, verdes y azules. Cubre el 129,3 % de sRGB, el 93,9 % de DCI-P3 y el 91,5 % de Adobe RGB (CIE 1976), y es compatible con HDR10.</p>
+        <ul class="chips"><li>93,9 % DCI-P3</li><li>91,5 % Adobe RGB</li><li>HDR10</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter right" aria-labelledby="ch4">
+      <div class="story-card glass">
+        <p class="eyebrow">04 · Luz</p>
+        <h2 id="ch4">WLED</h2>
+        <p class="desc">Detrás, la retroiluminación LED blanca y sus difusores reparten la luz por todo el panel: 300 cd/m² de brillo y contraste estático de 1000:1, con Flicker Free y Low Blue Light para sesiones largas.</p>
+        <ul class="chips"><li>300 cd/m²</li><li>1000:1</li><li>Flicker Free</li><li>Low Blue Light</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter" aria-labelledby="ch5">
+      <div class="story-card glass">
+        <p class="eyebrow">05 · Sincronización</p>
+        <h2 id="ch5">48–180 <span class="accent">Hz</span></h2>
+        <p class="desc">Con Adaptive Sync y compatibilidad con NVIDIA G-SYNC, el monitor ajusta su frecuencia a la de la tarjeta gráfica entre 48 y 180 Hz para evitar cortes de imagen (tearing) y tirones.</p>
+        <ul class="chips"><li>Adaptive Sync</li><li>G-SYNC Compatible</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter right" aria-labelledby="ch6">
+      <div class="story-card glass">
+        <p class="eyebrow">06 · Conexiones</p>
+        <h2 id="ch6">HDMI <span class="accent">+ DP</span></h2>
+        <p class="desc">Por detrás: una entrada HDMI 2.0, una DisplayPort 1.4 y una salida de auriculares de 3,5 mm.</p>
+        <ul class="chips"><li>1 × HDMI 2.0</li><li>1 × DisplayPort 1.4</li><li>Jack 3,5 mm</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter" aria-labelledby="ch7">
+      <div class="story-card glass">
+        <p class="eyebrow">07 · Ergonomía</p>
+        <h2 id="ch7">−3° / <span class="accent">21°</span></h2>
+        <p class="desc">El soporte permite inclinar la pantalla desde −3° hasta 21° (±2°) para ajustarla a tu postura.</p>
+        <ul class="chips"><li>−3° ±2°</li><li>21° ±2°</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter right" aria-labelledby="ch8">
+      <div class="story-card glass">
+        <p class="eyebrow">08 · Montaje</p>
+        <h2 id="ch8">VESA <span class="accent">100</span></h2>
+        <p class="desc">Quita el soporte y monta la pantalla en un brazo o en la pared con el anclaje VESA de 100 × 100 mm. Sin soporte pesa 2,62 kg.</p>
+        <ul class="chips"><li>100 × 100 mm</li><li>2,62 kg sin soporte</li></ul>
+      </div>
+    </section>
+
+    <section class="chapter final" aria-labelledby="ch9">
+      <div class="story-card glass">
+        <p class="eyebrow">AOC 24G42E</p>
+        <h2 id="ch9">Listo para <span class="accent">jugar</span></h2>
+        <p class="desc">23,8″ · Fast IPS · Full HD · 180 Hz · HDR10</p>
+        <div class="actions">
+          <button class="cta glass" type="button" data-open-specs>Ficha completa <span class="plus" aria-hidden="true">+</span></button>
+          <a class="pill-link glass" href="https://aoc.com/es/gaming/monitors/24g42e" target="_blank" rel="noopener">Ficha en AOC <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="note">Proyecto personal no oficial, sin relación con AOC; AOC es una marca de su titular. Despiece ilustrativo: la construcción interna real del 24G42E puede ser distinta. Datos técnicos de aoc.com, consultados el 21 de octubre de 2026.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<p class="sr-only" aria-live="polite" id="status"></p>
+
+<dialog id="specs" aria-labelledby="specs-title">
+  <div class="dlg-head">
+    <div>
+      <h2 id="specs-title">Ficha técnica</h2>
+      <p>AOC 24G42E · monitor gaming de 23,8″</p>
+    </div>
+    <button class="dlg-close" type="button" aria-label="Cerrar ficha técnica">×</button>
+  </div>
+
+  <h3>Imagen</h3>
+  <dl>
+    <dt>Pantalla</dt><dd>23,8″ (60,5 cm), panel Fast IPS con retroiluminación WLED</dd>
+    <dt>Resolución</dt><dd>1920 × 1080 (Full HD, 16:9)</dd>
+    <dt>Frecuencia</dt><dd>180 Hz</dd>
+    <dt>Tiempo de respuesta</dt><dd>1 ms GtG · 0,5 ms MPRT</dd>
+    <dt>Brillo</dt><dd>300 cd/m²</dd>
+    <dt>Contraste</dt><dd>1000:1 (estático)</dd>
+    <dt>Gama de color</dt><dd>129,3 % sRGB · 93,9 % DCI-P3 · 91,5 % Adobe RGB (CIE 1976)</dd>
+    <dt>HDR</dt><dd>HDR10</dd>
+    <dt>Sincronización</dt><dd>Adaptive Sync · NVIDIA G-SYNC Compatible (48–180 Hz)</dd>
+    <dt>Confort visual</dt><dd>Flicker Free · Low Blue Light</dd>
+  </dl>
+
+  <h3>Conexiones y montaje</h3>
+  <dl>
+    <dt>Entradas</dt><dd>1 × HDMI 2.0 · 1 × DisplayPort 1.4</dd>
+    <dt>Audio</dt><dd>Salida de auriculares de 3,5 mm</dd>
+    <dt>Inclinación</dt><dd>De −3° ±2° a 21° ±2°</dd>
+    <dt>VESA</dt><dd>100 × 100 mm</dd>
+    <dt>Peso sin soporte</dt><dd>2,62 kg</dd>
+  </dl>
+
+  <p class="src">Datos tomados de la ficha oficial de AOC (aoc.com/es y aoc.com/de), consultada el 21 de octubre de 2026.
+    <a href="https://aoc.com/es/gaming/monitors/24g42e" target="_blank" rel="noopener">Ver la ficha oficial ↗</a></p>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  gsap.registerPlugin(ScrollTrigger);
+  const DEG = Math.PI / 180;
+  const root = document.documentElement;
+  const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = reduceMQ.matches;
+  reduceMQ.addEventListener('change', e => { reduced = e.matches; });
+
+  const THEMES = [
+    {
+      name: 'Competitivo', screen: 'competitive',
+      bg: ['#8a0b1f', '#480412', '#120103'],
+      accent: '#ffc2cb', ink: '#3b0512', rim: '#ff2a44',
+      text: {
+        h1a: '180', h1b: 'Hz', h2a: 'Fast', h2b: 'IPS',
+        desc: 'Panel Fast IPS de 23,8″ a Full HD con 1 ms GtG y 0,5 ms MPRT. Cada movimiento llega nítido, fotograma a fotograma.'
+      }
+    },
+    {
+      name: 'Color', screen: 'color',
+      bg: ['#3d1fa3', '#1a0a57', '#060218'],
+      accent: '#b9f3ff', ink: '#06213a', rim: '#7c5cff',
+      text: {
+        h1a: 'Más', h1b: 'color', h2a: 'HDR', h2b: '10',
+        desc: 'Cubre el 129,3 % del espacio sRGB y el 93,9 % de DCI-P3, y es compatible con HDR10. Más matices en cada escena.'
+      }
+    }
+  ];
+  let current = 0;
+  let busy = false;
+
+  /* ---------- Estados del despiece (uno por capítulo) ---------- */
+  const CLOSED = {
+    ry: 0, rx: 0, zoom: 1, cz: 0, lift: 0,
+    frame: 0, panel: 0, filter: 0, diff: 0, board: 0, back: 0, backX: 0, backY: 0, stand: 0, tilt: 0,
+    shiftY: 0, glowLed: 0, glowChip: 0, glowPorts: 0, speed: 1, follow: 1,
+    lFrame: 0, lPanel: 0, lFilter: 0, lDiff: 0, lLed: 0, lBoard: 0, lPorts: 0, lTilt: 0, lVesa: 0
+  };
+  const OPEN_FRONT = { zoom: 1.6, cz: 0.6, lift: 0.1, follow: 0.3, frame: 2.2, panel: 1.5, filter: 0.9, diff: 0.45, board: -0.5, back: -1.3 };
+  const OPEN_BACK = { zoom: 1.9, cz: -0.5, lift: 0.1, follow: 0.3, frame: 0.5, panel: 0.35, filter: 0.25, diff: 0.12, board: -0.9, back: -0.7, backX: 0, backY: 3.4 };
+  const STATES = [
+    CLOSED,
+    { ...CLOSED, ...OPEN_FRONT, ry: -0.6, rx: 0.2, lFrame: 1, lPanel: 1 },
+    { ...CLOSED, ...OPEN_FRONT, ry: -0.35, rx: 0.12, frame: 2.8, panel: 2.1, speed: 5, lPanel: 1 },
+    { ...CLOSED, ...OPEN_FRONT, ry: -0.85, rx: 0.2, zoom: 1.7, cz: 0.75, frame: 2.9, panel: 2.2, filter: 1.4, diff: 0.5, lFilter: 1 },
+    { ...CLOSED, ...OPEN_FRONT, ry: -0.95, rx: 0.25, zoom: 1.7, cz: 0.8, frame: 3.1, panel: 2.4, filter: 1.7, diff: 0.9, glowLed: 1, lDiff: 1, lLed: 1 },
+    { ...CLOSED, ...OPEN_BACK, ry: Math.PI - 0.35, rx: 0.12, glowChip: 1, lBoard: 1 },
+    { ...CLOSED, ...OPEN_BACK, ry: Math.PI - 0.12, rx: 0.1, zoom: 0.5, shiftY: 0.24, backY: 4.2, glowPorts: 1, lPorts: 1 },
+    { ...CLOSED, ry: -1.25, rx: 0.05, zoom: 1.15, lift: 0.1, follow: 0.3, tilt: 21, lTilt: 1 },
+    { ...CLOSED, ry: Math.PI - 0.5, rx: 0.15, zoom: 1.35, lift: 0.1, follow: 0.3, stand: 1, lVesa: 1 },
+    { ...CLOSED, zoom: 1.15, lift: 0.14 }
+  ];
+  const S = { ...CLOSED };
+
+  /* ---------- Puntero ---------- */
+  const pointer = { nx: 0, ny: 0 };
+  addEventListener('pointermove', e => {
+    pointer.nx = e.clientX / innerWidth * 2 - 1;
+    pointer.ny = e.clientY / innerHeight * 2 - 1;
+  }, { passive: true });
+  document.addEventListener('mouseout', e => {
+    if (e.relatedTarget) return;
+    pointer.nx = pointer.ny = 0;
+  });
+
+  /* ---------- Fondo: un motivo sutil por especificación ---------- */
+  const bgCanvas = document.querySelector('.bgfx');
+  const bx = bgCanvas.getContext('2d');
+  const chapters = [...document.querySelectorAll('.chapter')];
+  // motivo de cada tramo: portada y 9 capítulos (el cierre repite el barrido de la portada)
+  const CHAPTER_MOTIF = [0, 1, 2, 3, 4, 5, 6, 7, 8, 0];
+  const bgWeights = [1, 0, 0, 0, 0, 0, 0, 0, 0];
+  let bgW = 1, bgH = 1, chapterTops = [], accentRGB = [255, 194, 203], bgDirty = true;
+
+  function sizeBg() {
+    // a resolución CSS: es un fondo tenue y no necesita más nitidez
+    bgW = bgCanvas.width = innerWidth;
+    bgH = bgCanvas.height = innerHeight;
+    chapterTops = chapters.map(c => c.getBoundingClientRect().top + scrollY);
+    bgDirty = true;
+  }
+  function readAccent() {
+    const v = getComputedStyle(root).getPropertyValue('--accent').trim();
+    const nums = v.match(/[\d.]+/g);
+    if (v.startsWith('#') && v.length === 7) {
+      accentRGB = [1, 3, 5].map(i => parseInt(v.slice(i, i + 2), 16));
+    } else if (nums && nums.length >= 3) {
+      accentRGB = nums.slice(0, 3).map(Number);
+    }
+  }
+  const acc = a => `rgba(${accentRGB[0]},${accentRGB[1]},${accentRGB[2]},${a})`;
+  function activeMotif() {
+    const mid = scrollY + innerHeight * 0.5;
+    let k = 0;
+    chapterTops.forEach((top, i) => { if (mid >= top) k = i + 1; });
+    return CHAPTER_MOTIF[k];
+  }
+
+  const SPEED_LINES = Array.from({ length: 34 }, () => ({
+    y: Math.random(), len: 80 + Math.random() * 260, v: 0.25 + Math.random() * 0.6, o: Math.random()
+  }));
+  const TRACES = Array.from({ length: 9 }, (_, i) => ({ y: 0.12 + i * 0.095, v: 0.08 + Math.random() * 0.12, o: Math.random() }));
+
+  const MOTIFS = [
+    // 0 · refresco: una banda de barrido recorre la pantalla de arriba abajo
+    (t, a) => {
+      const y = ((t / 2.4) % 1) * (bgH + 240) - 120;
+      const g = bx.createLinearGradient(0, y - 120, 0, y);
+      g.addColorStop(0, acc(0)); g.addColorStop(1, acc(0.07 * a));
+      bx.fillStyle = g; bx.fillRect(0, y - 120, bgW, 120);
+      bx.fillStyle = acc(0.22 * a); bx.fillRect(0, y, bgW, 1);
+    },
+    // 1 · panel IPS: rejilla de subpíxeles RGB con un brillo que la cruza en diagonal
+    (t, a) => {
+      const step = 26, phase = ((t * 0.12) % 1) * (bgW + bgH) * 1.4 - bgH * 0.4;
+      for (let y = step / 2; y < bgH; y += step) {
+        for (let x = step / 2; x < bgW; x += step) {
+          const d = (x + y - phase) / 220;
+          const o = (0.035 + 0.16 * Math.exp(-d * d)) * a;
+          bx.fillStyle = `rgba(255,59,78,${o})`; bx.fillRect(x - 3, y - 3, 1.6, 6);
+          bx.fillStyle = `rgba(61,255,160,${o})`; bx.fillRect(x - 0.8, y - 3, 1.6, 6);
+          bx.fillStyle = `rgba(61,123,255,${o})`; bx.fillRect(x + 1.4, y - 3, 1.6, 6);
+        }
+      }
+    },
+    // 2 · 180 Hz: líneas de velocidad horizontales
+    (t, a) => {
+      for (const l of SPEED_LINES) {
+        const x = ((l.o + t * l.v) % 1) * (bgW + l.len) - l.len;
+        const g = bx.createLinearGradient(x, 0, x + l.len, 0);
+        g.addColorStop(0, acc(0)); g.addColorStop(1, acc(0.16 * a));
+        bx.fillStyle = g; bx.fillRect(x, l.y * bgH, l.len, 1.5);
+      }
+    },
+    // 3 · color: tres focos rojo, verde y azul que se mezclan despacio
+    (t, a) => {
+      bx.globalCompositeOperation = 'lighter';
+      [[255, 59, 78], [61, 255, 160], [61, 123, 255]].forEach(([r, g, b], i) => {
+        const ang = t * 0.15 + i * 2.09;
+        const x = bgW / 2 + Math.cos(ang) * bgW * 0.28, y = bgH / 2 + Math.sin(ang) * bgH * 0.26;
+        const gr = bx.createRadialGradient(x, y, 0, x, y, Math.max(bgW, bgH) * 0.38);
+        gr.addColorStop(0, `rgba(${r},${g},${b},${0.1 * a})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        bx.fillStyle = gr; bx.fillRect(0, 0, bgW, bgH);
+      });
+      bx.globalCompositeOperation = 'source-over';
+    },
+    // 4 · WLED: luz cálida que sube desde una tira de LED en el borde inferior
+    (t, a) => {
+      const pulse = 0.85 + 0.15 * Math.sin(t * 1.3);
+      const g = bx.createLinearGradient(0, bgH, 0, bgH * 0.35);
+      g.addColorStop(0, `rgba(255,243,214,${0.13 * a * pulse})`); g.addColorStop(1, 'rgba(255,243,214,0)');
+      bx.fillStyle = g; bx.fillRect(0, bgH * 0.35, bgW, bgH * 0.65);
+      bx.fillStyle = `rgba(255,248,230,${0.5 * a})`;
+      for (let x = 12; x < bgW; x += 28) bx.fillRect(x, bgH - 4, 10, 2);
+    },
+    // 5 · Adaptive Sync: dos ondas (GPU y monitor) que se desfasan y vuelven a sincronizarse
+    (t, a) => {
+      const drift = Math.sin(t * 0.45) * 1.4, sync = 1 - Math.min(1, Math.abs(drift) / 1.4);
+      const wave = (phase, color) => {
+        bx.strokeStyle = color; bx.lineWidth = 1.5; bx.beginPath();
+        for (let x = 0; x <= bgW; x += 8) {
+          const y = bgH * 0.5 + Math.sin(x / 70 + t * 1.6 + phase) * 46;
+          if (x) bx.lineTo(x, y); else bx.moveTo(x, y);
+        }
+        bx.stroke();
+      };
+      wave(0, acc(0.16 * a));
+      wave(drift, `rgba(61,255,160,${(0.1 + 0.14 * sync) * a})`);
+    },
+    // 6 · conexiones: pulsos de señal que viajan por pistas horizontales
+    (t, a) => {
+      for (const tr of TRACES) {
+        const y = tr.y * bgH;
+        bx.fillStyle = acc(0.05 * a); bx.fillRect(0, y, bgW, 1);
+        const x = ((tr.o + t * tr.v) % 1) * (bgW + 160) - 80;
+        const g = bx.createLinearGradient(x - 80, 0, x, 0);
+        g.addColorStop(0, acc(0)); g.addColorStop(1, acc(0.4 * a));
+        bx.fillStyle = g; bx.fillRect(x - 80, y - 1, 80, 3);
+      }
+    },
+    // 7 · inclinación: transportador con una aguja que oscila entre −3° y 21°
+    (t, a) => {
+      const cx = bgW / 2, cy = bgH * 0.55, r = Math.min(bgW, bgH) * 0.46;
+      bx.strokeStyle = acc(0.11 * a); bx.lineWidth = 1;
+      for (let d = -60; d <= 60; d += 3) {
+        const ang = (d - 90) * DEG, len = d % 15 === 0 ? 18 : 8;
+        bx.beginPath();
+        bx.moveTo(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r);
+        bx.lineTo(cx + Math.cos(ang) * (r - len), cy + Math.sin(ang) * (r - len));
+        bx.stroke();
+      }
+      bx.strokeStyle = acc(0.22 * a); bx.lineWidth = 3;
+      bx.beginPath(); bx.arc(cx, cy, r + 6, (-3 - 90) * DEG, (21 - 90) * DEG); bx.stroke();
+      const ang = (9 + 12 * Math.sin(t * 0.8) - 90) * DEG;
+      bx.strokeStyle = acc(0.18 * a); bx.lineWidth = 1.5;
+      bx.beginPath(); bx.moveTo(cx, cy); bx.lineTo(cx + Math.cos(ang) * (r + 20), cy + Math.sin(ang) * (r + 20)); bx.stroke();
+    },
+    // 8 · VESA: cuadrícula de 100 px con taladros que se desplaza despacio
+    (t, a) => {
+      const step = 100, off = (t * 8) % step;
+      bx.strokeStyle = acc(0.07 * a); bx.lineWidth = 1;
+      bx.beginPath();
+      for (let x = off - step; x < bgW; x += step) { bx.moveTo(x, 0); bx.lineTo(x, bgH); }
+      for (let y = off - step; y < bgH; y += step) { bx.moveTo(0, y); bx.lineTo(bgW, y); }
+      bx.stroke();
+      bx.strokeStyle = acc(0.18 * a);
+      for (let x = off - step; x < bgW; x += step) {
+        for (let y = off - step; y < bgH; y += step) { bx.beginPath(); bx.arc(x, y, 5, 0, Math.PI * 2); bx.stroke(); }
+      }
+    }
+  ];
+
+  let bgFrame = 0, lastMotif = -1;
+  function drawBg(t) {
+    const target = activeMotif();
+    if (reduced) {
+      // sin movimiento: se pinta el motivo quieto y solo cuando cambia
+      if (target === lastMotif && !bgDirty) return;
+      bgWeights.fill(0); bgWeights[target] = 1; t = 0;
+    } else {
+      if (bgFrame++ % 2) return;
+      bgWeights.forEach((w, i) => { bgWeights[i] += ((i === target ? 1 : 0) - w) * 0.08; });
+    }
+    if (bgFrame % 30 === 0 || target !== lastMotif || bgDirty) readAccent();
+    lastMotif = target; bgDirty = false;
+    bx.clearRect(0, 0, bgW, bgH);
+    MOTIFS.forEach((draw, i) => { if (bgWeights[i] > 0.01) draw(t, bgWeights[i]); });
+  }
+
+  /* ---------- Pantalla del monitor (textura dibujada en canvas) ---------- */
+  const SW = 1024, SH = 576;
+  const screenCanvas = document.createElement('canvas');
+  screenCanvas.width = SW; screenCanvas.height = SH;
+  const sx = screenCanvas.getContext('2d');
+  let screenMode = THEMES[0].screen;
+
+  const STARS = Array.from({ length: 70 }, () => [Math.random() * SW, Math.random() * SH * 0.5, Math.random()]);
+  const ridge = (seed, amp, f1, f2) => Array.from({ length: SW / 16 + 2 }, (_, i) => {
+    const x = i * 16;
+    return amp * (0.55 + 0.45 * Math.sin(x * f1 + seed)) * (0.6 + 0.4 * Math.sin(x * f2 + seed * 2.3));
+  });
+  const RIDGES = [ridge(1.3, 150, 0.006, 0.017), ridge(4.1, 110, 0.009, 0.023), ridge(2.2, 70, 0.012, 0.031)];
+  const RED_RIDGE = ridge(0.7, 60, 0.01, 0.027);
+
+  function hudText(text, x, y, size, color, align = 'left') {
+    sx.font = `900 ${size}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+    sx.textAlign = align;
+    sx.fillStyle = color;
+    sx.fillText(text, x, y);
+  }
+
+  function drawCompetitive(t) {
+    const hz = SH * 0.56;
+    let g = sx.createLinearGradient(0, 0, 0, hz);
+    g.addColorStop(0, '#0d0108'); g.addColorStop(1, '#4a0618');
+    sx.fillStyle = g; sx.fillRect(0, 0, SW, hz);
+    for (const [x, y, a] of STARS) {
+      sx.fillStyle = `rgba(255,255,255,${0.25 + a * 0.5})`;
+      sx.fillRect(x, y, 2, 2);
+    }
+    // sol con franjas
+    sx.save();
+    sx.beginPath(); sx.arc(SW / 2, hz, 140, Math.PI, 0); sx.closePath(); sx.clip();
+    g = sx.createLinearGradient(0, hz - 140, 0, hz);
+    g.addColorStop(0, '#ffd36b'); g.addColorStop(1, '#ff2a55');
+    sx.fillStyle = g; sx.fillRect(SW / 2 - 140, hz - 140, 280, 140);
+    sx.fillStyle = '#3a0414';
+    for (let i = 0; i < 6; i++) sx.fillRect(SW / 2 - 140, hz - 14 - i * 18, 280, 7 - i);
+    sx.restore();
+    // cordillera
+    sx.fillStyle = '#1e0210';
+    sx.beginPath(); sx.moveTo(0, hz);
+    RED_RIDGE.forEach((h, i) => sx.lineTo(i * 16, hz - h * (Math.abs(i * 16 - SW / 2) > 170 ? 1 : 0.15)));
+    sx.lineTo(SW, hz); sx.fill();
+    // suelo y rejilla en movimiento
+    g = sx.createLinearGradient(0, hz, 0, SH);
+    g.addColorStop(0, '#1a0008'); g.addColorStop(1, '#050003');
+    sx.fillStyle = g; sx.fillRect(0, hz, SW, SH - hz);
+    sx.lineWidth = 2;
+    sx.strokeStyle = 'rgba(255,60,100,.8)';
+    sx.beginPath();
+    for (let i = -24; i <= 24; i++) { sx.moveTo(SW / 2 + i * 14, hz); sx.lineTo(SW / 2 + i * 150, SH); }
+    sx.stroke();
+    const phase = (t * 1.6) % 1;
+    for (let k = 0; k < 28; k++) {
+      const d = k + 1 - phase;
+      const y = hz + (SH - hz) * (0.9 / d);
+      if (y > SH) continue;
+      sx.strokeStyle = `rgba(255,60,100,${Math.min(1, (y - hz) / (SH - hz) * 4)})`;
+      sx.beginPath(); sx.moveTo(0, y); sx.lineTo(SW, y); sx.stroke();
+    }
+    g = sx.createLinearGradient(0, hz - 30, 0, hz + 30);
+    g.addColorStop(0, 'rgba(255,60,100,0)'); g.addColorStop(.5, 'rgba(255,90,130,.55)'); g.addColorStop(1, 'rgba(255,60,100,0)');
+    sx.fillStyle = g; sx.fillRect(0, hz - 30, SW, 60);
+    // mira
+    const cx = SW / 2, cy = SH * 0.47;
+    sx.strokeStyle = '#5dffb0'; sx.lineWidth = 4; sx.lineCap = 'round';
+    sx.beginPath();
+    sx.moveTo(cx, cy - 34); sx.lineTo(cx, cy - 12); sx.moveTo(cx, cy + 12); sx.lineTo(cx, cy + 34);
+    sx.moveTo(cx - 34, cy); sx.lineTo(cx - 12, cy); sx.moveTo(cx + 12, cy); sx.lineTo(cx + 34, cy);
+    sx.stroke();
+    sx.fillStyle = '#5dffb0'; sx.fillRect(cx - 3, cy - 3, 6, 6);
+    // HUD
+    hudText('180 Hz', 44, 76, 54, '#ffffff');
+    hudText('FAST IPS · 0,5 ms MPRT', 46, 108, 24, 'rgba(255,255,255,.7)');
+    hudText('FPS 180', SW - 44, 76, 40, '#5dffb0', 'right');
+    sx.strokeStyle = 'rgba(255,255,255,.8)'; sx.lineWidth = 2;
+    sx.strokeRect(44, SH - 62, 240, 18);
+    sx.fillStyle = '#ff3b4e'; sx.fillRect(48, SH - 58, 232 * (0.72 + 0.04 * Math.sin(t * 2)), 10);
+    hudText('30 / 90', SW - 44, SH - 42, 48, '#ffffff', 'right');
+  }
+
+  function drawColor(t) {
+    const hz = SH * 0.6;
+    let g = sx.createLinearGradient(0, 0, 0, hz);
+    g.addColorStop(0, '#1b0b63'); g.addColorStop(.4, '#6a2bd9'); g.addColorStop(.78, '#ff5fa2'); g.addColorStop(1, '#ffb36b');
+    sx.fillStyle = g; sx.fillRect(0, 0, SW, hz);
+    // sol y halo
+    const sunX = SW * 0.7, sunY = hz - 90;
+    g = sx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 220);
+    g.addColorStop(0, 'rgba(255,243,196,.9)'); g.addColorStop(.25, 'rgba(255,200,150,.35)'); g.addColorStop(1, 'rgba(255,160,160,0)');
+    sx.fillStyle = g; sx.fillRect(0, 0, SW, hz);
+    sx.fillStyle = '#fff6d6'; sx.beginPath(); sx.arc(sunX, sunY, 46, 0, Math.PI * 2); sx.fill();
+    // nubes a la deriva
+    sx.fillStyle = 'rgba(255,255,255,.18)';
+    for (let i = 0; i < 5; i++) {
+      const x = ((i * 260 + t * (14 + i * 5)) % (SW + 360)) - 180;
+      sx.beginPath(); sx.ellipse(x, 60 + i * 34, 150 - i * 12, 14, 0, 0, Math.PI * 2); sx.fill();
+    }
+    // montañas en capas
+    ['#8a4be0', '#5a2bb8', '#2c1478'].forEach((color, li) => {
+      sx.fillStyle = color;
+      sx.beginPath(); sx.moveTo(0, hz);
+      RIDGES[li].forEach((h, i) => sx.lineTo(i * 16, hz - h));
+      sx.lineTo(SW, hz); sx.fill();
+    });
+    // agua con reflejos
+    g = sx.createLinearGradient(0, hz, 0, SH);
+    g.addColorStop(0, '#ff7aa8'); g.addColorStop(.45, '#5a2bb8'); g.addColorStop(1, '#120a45');
+    sx.fillStyle = g; sx.fillRect(0, hz, SW, SH - hz);
+    sx.fillStyle = 'rgba(255,246,214,.75)';
+    for (let i = 0; i < 9; i++) {
+      const w = 90 - i * 8 + Math.sin(t * 2 + i) * 10;
+      sx.fillRect(sunX - w / 2 + Math.sin(t * 1.5 + i * 1.7) * 6, hz + 10 + i * 18, w, 3);
+    }
+    // colina en primer plano
+    g = sx.createLinearGradient(0, hz - 40, 0, SH);
+    g.addColorStop(0, '#16c2b4'); g.addColorStop(1, '#0a4f6b');
+    sx.fillStyle = g;
+    sx.beginPath(); sx.moveTo(0, SH); sx.lineTo(0, hz + 20);
+    sx.quadraticCurveTo(SW * 0.2, hz - 60, SW * 0.42, SH); sx.fill();
+    // etiquetas
+    sx.fillStyle = 'rgba(0,0,0,.35)';
+    sx.fillRect(40, 40, 132, 50);
+    sx.strokeStyle = '#ffffff'; sx.lineWidth = 2; sx.strokeRect(40, 40, 132, 50);
+    hudText('HDR10', 106, 80, 40, '#ffffff', 'center');
+    hudText('129,3 % sRGB · 93,9 % DCI-P3', SW - 40, SH - 40, 34, '#ffffff', 'right');
+  }
+
+  function drawScreen(t) {
+    if (screenMode === 'competitive') drawCompetitive(t); else drawColor(t);
+  }
+
+  /* ---------- Texturas de las piezas internas ---------- */
+  function canvasTexture(w, h, paint) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    paint(c.getContext('2d'), w, h);
+    return new THREE.CanvasTexture(c);
+  }
+  // subpíxeles RGB del filtro de color
+  function subpixelTexture() {
+    const tex = canvasTexture(48, 16, (x, w, h) => {
+      x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+      ['#ff2a3c', '#2bff7a', '#2f6bff'].forEach((c, i) => { x.fillStyle = c; x.fillRect(i * 16 + 2, 1, 12, 13); });
+    });
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(48, 27);
+    tex.magFilter = THREE.NearestFilter;
+    return tex;
+  }
+  // placa con pistas
+  function pcbTexture() {
+    return canvasTexture(512, 256, (x, w, h) => {
+      x.fillStyle = '#0b3a2c'; x.fillRect(0, 0, w, h);
+      x.strokeStyle = 'rgba(214,176,90,.55)'; x.lineWidth = 2;
+      for (let i = 0; i < 46; i++) {
+        let px = Math.random() * w, py = Math.random() * h;
+        x.beginPath(); x.moveTo(px, py);
+        for (let s = 0; s < 3; s++) {
+          if (s % 2) py += (Math.random() - 0.5) * 120; else px += (Math.random() - 0.5) * 200;
+          x.lineTo(px, py);
+        }
+        x.stroke();
+        x.fillStyle = 'rgba(214,176,90,.8)'; x.fillRect(px - 3, py - 3, 6, 6);
+      }
+    });
+  }
+
+  /* ---------- Monitor 3D por capas ---------- */
+  const stage = document.querySelector('.stage');
+  const canvas = document.getElementById('monitor');
+  const spin = { v: 0, blur: 0 };
+  let three = null;
+
+  function rrPath(p, w, h, r, cx = 0, cy = 0) {
+    const x = cx - w / 2, y = cy - h / 2;
+    p.moveTo(x + r, y);
+    p.lineTo(x + w - r, y); p.quadraticCurveTo(x + w, y, x + w, y + r);
+    p.lineTo(x + w, y + h - r); p.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    p.lineTo(x + r, y + h); p.quadraticCurveTo(x, y + h, x, y + h - r);
+    p.lineTo(x, y + r); p.quadraticCurveTo(x, y, x + r, y);
+    return p;
+  }
+  function extrude(shape, d, bevel = 0.02) {
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: d, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 10
+    });
+    geo.translate(0, 0, -d / 2);
+    return geo;
+  }
+  function roundedBox(w, h, d, r, mat) {
+    return new THREE.Mesh(extrude(rrPath(new THREE.Shape(), w, h, r), d), mat);
+  }
+  function box(w, h, d, mat, x = 0, y = 0, z = 0) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    return m;
+  }
+  function strip(a, b, z, width, mat) {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const m = box(len, width, 0.012, mat, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z);
+    m.rotation.z = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    return m;
+  }
+  function anchor(parent, key, x, y, z) {
+    const o = new THREE.Object3D();
+    o.position.set(x, y, z);
+    o.userData.tag = key;
+    parent.add(o);
+    return o;
+  }
+
+  function initThree() {
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    } catch (err) {
+      return null;
+    }
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
+
+    const rim = new THREE.Color(THEMES[0].rim);
+    const mats = {
+      body: new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.42, metalness: 0.35 }),
+      back: new THREE.MeshStandardMaterial({ color: 0x0d0d10, roughness: 0.55, metalness: 0.25 }),
+      stand: new THREE.MeshStandardMaterial({ color: 0x1b1b1f, roughness: 0.35, metalness: 0.6 }),
+      metal: new THREE.MeshStandardMaterial({ color: 0x5b606b, roughness: 0.3, metalness: 0.85 }),
+      accent: new THREE.MeshStandardMaterial({ color: rim.clone(), emissive: rim.clone(), emissiveIntensity: 1.1, roughness: 0.4 }),
+      chip: new THREE.MeshStandardMaterial({ color: 0x111114, emissive: rim.clone(), emissiveIntensity: 0.15, roughness: 0.5 }),
+      port: new THREE.MeshStandardMaterial({ color: 0xb8bcc6, emissive: rim.clone(), emissiveIntensity: 0, roughness: 0.25, metalness: 0.9 }),
+      hole: new THREE.MeshBasicMaterial({ color: 0x030303 }),
+      led: new THREE.MeshStandardMaterial({ color: 0xfff6e0, emissive: 0xfff3d6, emissiveIntensity: 0.3 }),
+      diff: new THREE.MeshStandardMaterial({
+        color: 0xdfe8ff, emissive: 0xffffff, emissiveIntensity: 0, transparent: true, opacity: 0.32,
+        side: THREE.DoubleSide, depthWrite: false
+      })
+    };
+
+    const pivot = new THREE.Group();
+    const model = new THREE.Group();
+    const head = new THREE.Group();      // todo lo que se inclina
+    const headInner = new THREE.Group();
+    pivot.add(model);
+    model.add(head);
+    head.add(headInner);
+    scene.add(pivot);
+
+    // bisagra del soporte: el cabezal gira alrededor de este punto al inclinarse
+    const HINGE = new THREE.Vector3(0, -0.35, -0.49);
+    head.position.copy(HINGE);
+    headInner.position.copy(HINGE).multiplyScalar(-1);
+
+    const W = 5.28, H = 2.97;                 // 1 unidad ≈ 100 mm
+    const parts = {};
+    const anchors = [];
+    const layer = name => { const g = new THREE.Group(); headInner.add(g); parts[name] = g; return g; };
+
+    // marco frontal: «sin marcos» en tres lados y barbilla abajo
+    const frame = layer('frame');
+    const frameShape = rrPath(new THREE.Shape(), W + 0.14, H + 0.27, 0.06, 0, -0.065);
+    frameShape.holes.push(rrPath(new THREE.Path(), W, H, 0.01));
+    const frameMesh = new THREE.Mesh(extrude(frameShape, 0.03, 0.01), mats.body);
+    frameMesh.position.z = 0.055;
+    frame.add(frameMesh);
+    const logoTex = canvasTexture(256, 64, (x, w, h) => {
+      x.fillStyle = '#c9c9cf'; x.font = '700 46px Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('AOC', w / 2, h / 2 + 2);
+    });
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.075), new THREE.MeshBasicMaterial({ map: logoTex, transparent: true }));
+    logo.position.set(0, -H / 2 - 0.1, 0.082);
+    frame.add(logo);
+    anchors.push(anchor(frame, 'frame', -W / 2 + 0.1, H / 2 - 0.05, 0.08));
+
+    // panel Fast IPS con la imagen
+    const panel = layer('panel');
+    panel.add(box(W, H, 0.025, mats.body, 0, 0, 0.035));
+    const screenTex = new THREE.CanvasTexture(screenCanvas);
+    screenTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }));
+    screen.position.z = 0.0485;
+    panel.add(screen);
+    const sheenTex = canvasTexture(512, 256, (x, w, h) => {
+      const g = x.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#000'); g.addColorStop(.42, '#000'); g.addColorStop(.5, '#fff'); g.addColorStop(.58, '#000'); g.addColorStop(1, '#000');
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+    });
+    const sheen = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({
+      map: sheenTex, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    sheen.position.z = 0.05;
+    panel.add(sheen);
+    anchors.push(anchor(panel, 'panel', W / 2 - 0.7, H / 2 - 0.35, 0.05));
+
+    // filtro de color RGB
+    const filter = layer('filter');
+    const filterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({
+      map: subpixelTexture(), transparent: true, opacity: 0.92, side: THREE.DoubleSide
+    }));
+    filterMesh.position.z = 0.018;
+    filter.add(filterMesh);
+    anchors.push(anchor(filter, 'filter', W / 2 - 0.05, H / 2 - 0.15, 0.02));
+
+    // difusores, guía de luz y tira de LED blancos
+    const diff = layer('diff');
+    [0.004, -0.012].forEach(z => {
+      const sheet = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mats.diff);
+      sheet.position.z = z;
+      diff.add(sheet);
+    });
+    diff.add(box(W, 0.05, 0.012, mats.metal, 0, -H / 2 - 0.035, -0.004));
+    for (let i = 0; i < 30; i++) diff.add(box(0.07, 0.035, 0.02, mats.led, -W / 2 + 0.12 + i * (W - 0.24) / 29, -H / 2 - 0.02, 0.002));
+    const ledLight = new THREE.PointLight(0xfff3d6, 0, 5);
+    ledLight.position.set(0, -H / 2 + 0.3, 0.3);
+    diff.add(ledLight);
+    anchors.push(anchor(diff, 'diff', W / 2 - 0.05, H / 2 - 0.15, 0));
+    anchors.push(anchor(diff, 'led', 0.9, -H / 2 - 0.03, 0.01));
+
+    // chasis metálico (referencia fija)
+    headInner.add(box(W, H, 0.02, mats.metal, 0, 0, -0.03));
+
+    // placa de control con conectores
+    const board = layer('board');
+    const boardInner = new THREE.Group();
+    boardInner.position.set(0, -0.35, -0.26);
+    board.add(boardInner);
+    boardInner.add(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.15, 0.03),
+      [mats.back, mats.back, mats.back, mats.back, mats.back, new THREE.MeshStandardMaterial({ map: pcbTexture(), roughness: 0.6 })]));
+    boardInner.add(box(0.42, 0.42, 0.05, mats.chip, -0.55, 0.12, -0.04));
+    [[0.25, 0.25, 0.2], [0.55, 0.3, 0.16], [0.85, 0.05, 0.14]].forEach(([x, y, s]) => boardInner.add(box(s, s, 0.03, mats.chip, x, y, -0.03)));
+    [[-1.0, 0.3], [-1.1, 0.0], [0.95, 0.38], [1.1, 0.12]].forEach(([x, y]) => {
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 16), mats.metal);
+      cap.rotation.x = Math.PI / 2;
+      cap.position.set(x, y, -0.075);
+      boardInner.add(cap);
+    });
+    anchors.push(anchor(boardInner, 'board', -0.55, 0.12, -0.07));
+    const PORT_Y = -0.42, PORT_Z = -0.085;
+    [['hdmi', -0.35, 0.26], ['dp', 0.05, 0.22]].forEach(([key, x, w]) => {
+      boardInner.add(box(w, 0.1, 0.11, mats.port, x, PORT_Y, PORT_Z));
+      boardInner.add(box(w - 0.05, 0.05, 0.01, mats.hole, x, PORT_Y, PORT_Z - 0.056));
+      anchors.push(anchor(boardInner, key, x, PORT_Y, PORT_Z - 0.06));
+    });
+    const jack = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.11, 24), mats.port);
+    jack.rotation.x = Math.PI / 2;
+    jack.position.set(0.38, PORT_Y, PORT_Z);
+    boardInner.add(jack);
+    const jackHole = new THREE.Mesh(new THREE.CircleGeometry(0.028, 20), mats.hole);
+    jackHole.rotation.y = Math.PI;
+    jackHole.position.set(0.38, PORT_Y, PORT_Z - 0.057);
+    boardInner.add(jackHole);
+    anchors.push(anchor(boardInner, 'audio', 0.38, PORT_Y, PORT_Z - 0.06));
+
+    // carcasa trasera con anclaje VESA y detalles de acento
+    const back = layer('back');
+    const shell = roundedBox(W + 0.14, H + 0.27, 0.08, 0.06, mats.back);
+    shell.position.set(0, -0.065, -0.1);
+    back.add(shell);
+    const bulge = roundedBox(3.4, 1.9, 0.28, 0.35, mats.back);
+    bulge.position.set(0, -0.35, -0.3);
+    back.add(bulge);
+    back.add(strip([-1.3, 0.2], [0, -0.45], -0.466, 0.035, mats.accent));
+    back.add(strip([0, -0.45], [1.3, 0.2], -0.466, 0.035, mats.accent));
+    [[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]].forEach(([x, y]) => {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.014, 10, 24), mats.metal);
+      ring.position.set(x, -0.35 + y, -0.462);
+      back.add(ring);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), mats.hole);
+      hole.rotation.y = Math.PI;
+      hole.position.set(x, -0.35 + y, -0.463);
+      back.add(hole);
+    });
+    anchors.push(anchor(back, 'vesa', 0.5, 0.15, -0.47));
+    anchors.push(anchor(headInner, 'tilt', 0, H / 2 + 0.07, -0.05));
+
+    // soporte: placa de anclaje, cuello y base
+    const stand = new THREE.Group();
+    model.add(stand);
+    stand.add(roundedBox(1.25, 1.25, 0.04, 0.12, mats.stand).translateY(-0.35).translateZ(-0.49));
+    stand.add(box(0.36, 2.05, 0.12, mats.stand, 0, -1.55, -0.56));
+    stand.add(box(0.05, 1.5, 0.012, mats.accent, 0, -1.6, -0.623));
+    const base = new THREE.Mesh(new THREE.ExtrudeGeometry(rrPath(new THREE.Shape(), 2.9, 1.3, 0.55), {
+      depth: 0.06, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 3, curveSegments: 12
+    }), mats.stand);
+    base.rotation.x = -Math.PI / 2;
+    base.position.set(0, -2.6, -0.4);
+    stand.add(base);
+    stand.add(box(1.1, 0.012, 0.03, mats.accent, 0, -2.515, 0.27));
+
+    model.position.y = 0.53; // centra el conjunto (de -2.62 a 1.57)
+
+    // luces
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x220008, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1);
+    key.position.set(-3, 4, 6);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+    fill.position.set(3, 2, -6);
+    scene.add(fill);
+    const rimL = new THREE.PointLight(rim.clone(), 3, 22);
+    rimL.position.set(-5, 1.5, -3);
+    const rimR = new THREE.PointLight(rim.clone(), 3, 22);
+    rimR.position.set(5, 2.5, -3);
+    scene.add(rimL, rimR);
+
+    const BOX = { w: 5.5, h: 4.2 };
+    const view = { dist: 10, height: 1 };
+    function fit() {
+      const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      const desktop = innerWidth >= 1200;
+      const tanHalf = Math.tan(camera.fov * DEG / 2);
+      view.dist = Math.max(
+        (BOX.h / (desktop ? 0.6 : 0.42)) / (2 * tanHalf),
+        (BOX.w / (desktop ? 0.44 : 0.84)) / (2 * tanHalf * camera.aspect)
+      );
+      view.tanHalf = tanHalf;
+      view.desktop = desktop;
+      camera.updateProjectionMatrix();
+    }
+
+    function apply(t) {
+      parts.frame.position.z = S.frame;
+      parts.panel.position.z = S.panel;
+      parts.filter.position.z = S.filter;
+      parts.diff.position.z = S.diff;
+      parts.board.position.z = S.board;
+      parts.back.position.set(S.backX, S.backY, S.back);
+      stand.position.set(0, -3.4 * S.stand, 0.6 * S.stand);
+      head.rotation.x = -S.tilt * DEG;
+      model.position.set(0, 0.53 + S.shiftY, -S.cz);
+
+      mats.led.emissiveIntensity = 0.3 + S.glowLed * 2.6;
+      mats.diff.emissiveIntensity = S.glowLed * 0.45;
+      ledLight.intensity = S.glowLed * 0.9;
+      mats.chip.emissiveIntensity = 0.15 + S.glowChip * 1.6;
+      mats.port.emissiveIntensity = S.glowPorts * 0.9;
+
+      const dist = view.dist * S.zoom;
+      camera.position.set(0, 0, dist);
+      camera.lookAt(0, 0, 0);
+      // flotación de ±20 px en 6 s, convertida a unidades de la escena
+      const unitsPerPx = 2 * dist * view.tanHalf / Math.max(1, stage.clientHeight);
+      const bob = reduced ? 0 : Math.sin(t / 6 * Math.PI * 2) * 20 * unitsPerPx;
+      pivot.position.y = bob + (view.desktop ? 0 : S.lift * 2 * dist * view.tanHalf);
+    }
+
+    return { renderer, scene, camera, pivot, screenTex, sheenTex, mats, rims: [rimL, rimR], anchors, fit, apply };
+  }
+
+  if (typeof THREE !== 'undefined') three = initThree();
+  if (!three) {
+    // sin WebGL: ilustración estática en lugar del modelo 3D
+    stage.innerHTML = `<div class="fallback">${document.querySelector('.card .card-img').innerHTML}</div>`;
+  }
+
+  /* ---------- Etiquetas de las piezas ---------- */
+  const TAGS = {
+    frame: ['Marco frontal', 'lFrame'],
+    panel: ['Panel Fast IPS', 'lPanel'],
+    filter: ['Filtro de color RGB', 'lFilter'],
+    diff: ['Difusores', 'lDiff'],
+    led: ['Retroiluminación WLED', 'lLed'],
+    board: ['Placa de control', 'lBoard'],
+    hdmi: ['HDMI 2.0', 'lPorts', 26],
+    dp: ['DisplayPort 1.4', 'lPorts', 66],
+    audio: ['Auriculares 3,5 mm', 'lPorts', 106],
+    tilt: ['Inclinación −3° a 21°', 'lTilt'],
+    vesa: ['VESA 100 × 100', 'lVesa']
+  };
+  const tagLayer = document.querySelector('.tags');
+  const tagEls = {};
+  Object.entries(TAGS).forEach(([key, [label, , rise]]) => {
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.innerHTML = `<span>${label}</span>`;
+    if (rise) el.style.setProperty('--rise', `${rise}px`);
+    tagLayer.appendChild(el);
+    tagEls[key] = el;
+  });
+  const tmpV = three ? new THREE.Vector3() : null;
+  function updateTags() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    for (const a of three.anchors) {
+      const key = a.userData.tag;
+      const el = tagEls[key];
+      const o = S[TAGS[key][1]];
+      if (o < 0.01) {
+        if (el.style.opacity !== '0') el.style.opacity = '0';
+        continue;
+      }
+      a.getWorldPosition(tmpV).project(three.camera);
+      el.style.opacity = o.toFixed(3);
+      el.style.transform = `translate(${((tmpV.x + 1) / 2 * w).toFixed(1)}px, ${((1 - tmpV.y) / 2 * h).toFixed(1)}px)`;
+    }
+  }
+
+  /* ---------- Bucle principal ---------- */
+  let rotX = 0, rotY = 0, frame = 0, lastBlur = -1, screenTime = 0, lastNow = 0;
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const t = now / 1000;
+    const dt = Math.min(0.1, (now - lastNow) / 1000 || 0);
+    lastNow = now;
+    drawBg(t);
+    if (!three) return;
+
+    const amp = (reduced ? 0.25 : 1) * S.follow;
+    rotY += (pointer.nx * 40 * DEG * amp - rotY) * 0.05;
+    rotX += (pointer.ny * 15 * DEG * amp - rotX) * 0.05;
+    three.pivot.rotation.set(rotX + S.rx, rotY + S.ry + spin.v, 0);
+    three.sheenTex.offset.x = -rotY * 0.6;
+    three.apply(t);
+
+    if (spin.blur !== lastBlur) {
+      canvas.style.filter = spin.blur > 0.05 ? `blur(${spin.blur.toFixed(2)}px)` : '';
+      lastBlur = spin.blur;
+    }
+    screenTime += dt * S.speed;
+    if (!reduced && frame++ % 2 === 0) {
+      drawScreen(screenTime);
+      three.screenTex.needsUpdate = true;
+    }
+    three.renderer.render(three.scene, three.camera);
+    updateTags();
+  }
+
+  function layout() {
+    if (three) three.fit();
+    sizeBg();
+  }
+  addEventListener('resize', layout);
+  layout();
+  drawScreen(0);
+  if (three) three.screenTex.needsUpdate = true;
+  document.fonts && document.fonts.ready.then(() => {
+    drawScreen(screenTime);
+    if (three) three.screenTex.needsUpdate = true;
+    ScrollTrigger.refresh();
+    sizeBg();
+  });
+  requestAnimationFrame(tick);
+
+  /* ---------- Despiece ligado al scroll ---------- */
+  if (!reduced) {
+    // cada capítulo ocupa una pantalla: el estado k se completa cuando su capítulo llena la vista
+    const tl = gsap.timeline({
+      scrollTrigger: { trigger: '#story', start: 'top bottom', end: 'bottom bottom', scrub: 1 }
+    });
+    STATES.slice(1).forEach((state, i) => {
+      tl.to(S, { ...state, duration: 0.7, ease: 'power1.inOut' }, i + 0.3);
+    });
+  } else {
+    // sin animaciones largas: cada capítulo cambia de estado de golpe con un fundido corto
+    const setState = k => {
+      gsap.set(S, STATES[k]);
+      gsap.fromTo(canvas, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+    };
+    chapters.forEach((ch, i) => ScrollTrigger.create({
+      trigger: ch, start: 'top 55%', end: 'bottom 55%',
+      onToggle: self => { if (self.isActive) setState(i + 1); }
+    }));
+    ScrollTrigger.create({ trigger: '#story', start: 'top 55%', onLeaveBack: () => setState(0) });
+  }
+
+  // aparición de las tarjetas de texto
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => e.target.classList.toggle('in', e.isIntersecting));
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.story-card').forEach(c => io.observe(c));
+
+  /* ---------- Cambio de modo ---------- */
+  const cards = [...document.querySelectorAll('.card')];
+  const modes = document.querySelector('.modes');
+  const swapEls = [...document.querySelectorAll('[data-swap]')];
+  const status = document.getElementById('status');
+
+  function switchTheme(index) {
+    if (busy || index === current) return;
+    busy = true;
+    current = index;
+    modes.classList.add('busy');
+    const theme = THEMES[index];
+    cards.forEach((c, i) => {
+      c.classList.toggle('active', i === index);
+      c.setAttribute('aria-pressed', String(i === index));
+    });
+    status.textContent = `Modo ${theme.name} activado`;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        spin.v = 0; // 720° equivale a la posición inicial
+        busy = false;
+        modes.classList.remove('busy');
+      }
+    });
+
+    tl.to(root, {
+      '--bg-inner': theme.bg[0], '--bg-mid': theme.bg[1], '--bg-outer': theme.bg[2],
+      '--accent': theme.accent, '--accent-ink': theme.ink,
+      duration: 1.5, ease: 'power2.inOut'
+    }, 0);
+
+    if (three) {
+      const c = new THREE.Color(theme.rim);
+      const m = three.mats;
+      [m.accent.color, m.accent.emissive, m.chip.emissive, m.port.emissive, ...three.rims.map(l => l.color)].forEach(col => {
+        tl.to(col, { r: c.r, g: c.g, b: c.b, duration: 1.5, ease: 'power2.inOut' }, 0);
+      });
+    }
+
+    const swapScreen = () => {
+      screenMode = theme.screen;
+      drawScreen(screenTime);
+      if (three) three.screenTex.needsUpdate = true;
+    };
+
+    // monitor: vuelta con desenfoque, cambio de pantalla en el punto álgido y remate hasta 720°
+    if (reduced) {
+      tl.to(spin, { blur: 8, duration: 0.4, ease: 'power2.in', onComplete: swapScreen }, 0)
+        .to(spin, { blur: 0, duration: 0.6, ease: 'power2.out' }, 0.4);
+    } else {
+      tl.to(spin, { v: Math.PI * 2, blur: 15, duration: 0.6, ease: 'power2.in', onComplete: swapScreen }, 0)
+        .to(spin, { v: Math.PI * 4, blur: 0, duration: 1.5, ease: 'back.out(0.7)' }, 0.6);
+    }
+
+    // textos
+    tl.to(swapEls, { opacity: 0, y: reduced ? 0 : -18, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, 0.1)
+      .call(() => swapEls.forEach(el => { el.textContent = theme.text[el.dataset.swap]; }), null, 0.6)
+      .fromTo(swapEls, { opacity: 0, y: reduced ? 0 : 18 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', stagger: 0.05 }, 0.65);
+  }
+
+  cards.forEach((card, i) => card.addEventListener('click', () => switchTheme(i)));
+
+  /* ---------- Navegación y ficha técnica ---------- */
+  const dialog = document.getElementById('specs');
+  const navButtons = [...document.querySelectorAll('.nav button')];
+  const story = document.getElementById('story');
+  const setCurrent = key => navButtons.forEach(b => {
+    if (b.dataset.nav === key) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+  });
+  const scrollToY = y => scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' });
+  const goSpecs = () => scrollToY(story.getBoundingClientRect().top + scrollY);
+
+  ScrollTrigger.create({
+    trigger: story, start: 'top 60%', end: 'bottom top',
+    onToggle: self => setCurrent(self.isActive ? 'specs' : 'home')
+  });
+
+  document.querySelectorAll('[data-go-specs]').forEach(b => b.addEventListener('click', goSpecs));
+  document.querySelectorAll('[data-open-specs]').forEach(b => b.addEventListener('click', () => dialog.showModal()));
+  document.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); scrollToY(0); });
+  navButtons.forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.nav;
+    if (key === 'specs') goSpecs();
+    else if (key === 'modes') switchTheme((current + 1) % THEMES.length);
+    else scrollToY(0);
+  }));
+  dialog.querySelector('.dlg-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', e => {
+    if (e.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) dialog.close();
+  });
+})();
+</script>
+</body>
+</html>
